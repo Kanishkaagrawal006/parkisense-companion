@@ -26,12 +26,13 @@ const PatientAuth = () => {
   };
 
   const handleSendOtp = () => {
-    // Simulate OTP send
     setShowOtp(true);
   };
 
   const handleVerifyOtp = () => {
-    // Simulate OTP verification
+    if (otp !== '123456') {
+      return; // Invalid OTP
+    }
     login({
       id: '1',
       name: isLogin ? 'Patient User' : formData.fullName,
@@ -151,6 +152,9 @@ const PatientAuth = () => {
                   maxLength={6}
                   className="text-center text-2xl tracking-[0.5em]"
                 />
+                <div className="bg-primary-light border border-primary/20 rounded-xl p-3 text-center">
+                  <p className="text-primary font-medium">Demo OTP: 123456</p>
+                </div>
                 <p className="text-sm text-muted-foreground text-center mt-2">
                   Didn't receive? <button className="text-primary font-medium">Resend OTP</button>
                 </p>
