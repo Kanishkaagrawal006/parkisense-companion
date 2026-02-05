@@ -2,7 +2,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import { Hand, Mic, PenTool, LogOut, ChevronRight, Award, Clock } from 'lucide-react';
+import { useMedication } from '@/contexts/MedicationContext';
+import WakeUpButton from '@/components/medication/WakeUpButton';
+import MedicationSchedule from '@/components/medication/MedicationSchedule';
+import { Hand, Mic, PenTool, LogOut, ChevronRight, Award, Clock, Pill } from 'lucide-react';
 
 const tests = [
   {
@@ -40,7 +43,9 @@ const tests = [
 const PatientDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-
+  const { isAwake, scheduledDoses } = useMedication();
+  const takenCount = scheduledDoses.filter(d => d.taken).length;
+  const totalCount = scheduledDoses.length;
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -77,22 +82,45 @@ const PatientDashboard = () => {
           </p>
         </div>
 
-        {/* Progress Card */}
-        <div className="mt-8 bg-gradient-to-br from-primary to-primary-glow rounded-3xl p-6 text-primary-foreground animate-slide-up shadow-button">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
-              <Award className="w-7 h-7" />
-            </div>
-            <div>
-              <p className="text-primary-foreground/80 text-sm">Your progress</p>
-              <p className="text-2xl font-bold">You're doing great!</p>
-            </div>
-          </div>
-          <div className="mt-4 bg-white/20 rounded-full h-3">
-            <div className="bg-white rounded-full h-3 w-1/3 transition-all duration-500" />
-          </div>
-          <p className="text-sm text-primary-foreground/80 mt-2">1 of 3 tests completed this week</p>
+        {/* Wake Up Button */}
+        <div className="mt-8 animate-slide-up">
+          <WakeUpButton />
         </div>
+
+        {/* Medication Schedule */}
+        {isAwake && (
+          <div className="mt-8 animate-fade-in">
+            <MedicationSchedule />
+          </div>
+        )}
+
+        {/* Progress Card - Only show when awake */}
+        {isAwake && (
+          <div className="mt-8 bg-gradient-to-br from-primary to-primary-glow rounded-3xl p-6 text-primary-foreground animate-slide-up shadow-button">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
+                <Pill className="w-7 h-7" />
+              </div>
+              <div>
+                <p className="text-primary-foreground/80 text-sm">Medication Progress</p>
+                <p className="text-2xl font-bold">
+                  {takenCount === totalCount && totalCount > 0
+                    ? "All done! 🎉"
+                    : "You're doing great!"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 bg-white/20 rounded-full h-3">
+              <div 
+                className="bg-white rounded-full h-3 transition-all duration-500" 
+                style={{ width: `${totalCount > 0 ? (takenCount / totalCount) * 100 : 0}%` }}
+              />
+            </div>
+            <p className="text-sm text-primary-foreground/80 mt-2">
+              {takenCount} of {totalCount} medications taken today
+            </p>
+          </div>
+        )}
 
         {/* Tests Section */}
         <div className="mt-10">
