@@ -1,0 +1,63 @@
+import { Sun, Moon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useMedication } from '@/contexts/MedicationContext';
+import { format } from 'date-fns';
+
+const WakeUpButton = () => {
+  const { wakeUpTime, setWakeUpTime, isAwake, resetDay } = useMedication();
+
+  const handleWakeUp = () => {
+    setWakeUpTime(new Date());
+  };
+
+  if (isAwake && wakeUpTime) {
+    return (
+      <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-3xl p-6 border-2 border-success/20">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-success/20 flex items-center justify-center">
+            <Sun className="w-7 h-7 text-success" />
+          </div>
+          <div className="flex-1">
+            <p className="text-success font-bold text-lg">Good morning! ☀️</p>
+            <p className="text-muted-foreground">
+              You woke up at{' '}
+              <span className="font-semibold text-foreground">
+                {format(wakeUpTime, 'h:mm a')}
+              </span>
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={resetDay}
+          className="mt-4 text-muted-foreground hover:text-destructive"
+        >
+          <Moon className="w-4 h-4 mr-2" />
+          Reset (new day)
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleWakeUp}
+      className="w-full bg-gradient-to-br from-primary to-primary-glow rounded-3xl p-8 text-primary-foreground shadow-button transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-ring/30"
+    >
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center animate-gentle-pulse">
+          <Sun className="w-10 h-10" />
+        </div>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">I'm Awake</h2>
+          <p className="text-primary-foreground/80 mt-1">
+            Tap to start your medication schedule
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+};
+
+export default WakeUpButton;
