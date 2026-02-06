@@ -3,13 +3,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { FirebaseAuthProvider } from "@/contexts/FirebaseAuthContext";
 import { MedicationProvider } from "@/contexts/MedicationContext";
 
 // Pages
 import Welcome from "./pages/Welcome";
 import PatientAuth from "./pages/patient/PatientAuth";
 import PatientDashboard from "./pages/patient/PatientDashboard";
+import PatientProgress from "./pages/patient/PatientProgress";
 import TappingTest from "./pages/patient/tests/TappingTest";
 import SpeechTest from "./pages/patient/tests/SpeechTest";
 import SpiralTest from "./pages/patient/tests/SpiralTest";
@@ -21,7 +22,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+    <FirebaseAuthProvider>
       <MedicationProvider>
         <TooltipProvider>
           <Toaster />
@@ -34,6 +35,7 @@ const App = () => (
               {/* Patient Routes */}
               <Route path="/patient/auth" element={<PatientAuth />} />
               <Route path="/patient/dashboard" element={<PatientDashboard />} />
+              <Route path="/patient/progress" element={<PatientProgress />} />
               <Route path="/patient/test/tapping" element={<TappingTest />} />
               <Route path="/patient/test/speech" element={<SpeechTest />} />
               <Route path="/patient/test/spiral" element={<SpiralTest />} />
@@ -48,7 +50,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </MedicationProvider>
-    </AuthProvider>
+    </FirebaseAuthProvider>
   </QueryClientProvider>
 );
 

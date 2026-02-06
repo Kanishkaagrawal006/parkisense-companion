@@ -5,13 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import Logo from '@/components/Logo';
-import { ArrowLeft, Mail, Lock, User, Stethoscope } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft, Mail, Lock, User, Stethoscope, Loader2 } from 'lucide-react';
+import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const DoctorAuth = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { signUpDoctor, loginDoctor } = useFirebaseAuth();
+  const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -23,15 +26,66 @@ const DoctorAuth = () => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = () => {
-    login({
-      id: '2',
-      name: isLogin ? 'Dr. Smith' : formData.fullName,
-      role: 'doctor',
-      email: formData.email,
-    });
-    navigate('/doctor/dashboard');
+  const handleSubmit = async () => {
+    // Validate passwords match for signup
+    if (!isLogin && formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await loginDoctor(formData.email, formData.password);
+        if (error) {
+          toast({
+            title: "Login Failed",
+            description: error,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        toast({
+          title: "Welcome back, Doctor! 👨‍⚕️",
+          description: "Successfully logged in.",
+        });
+      } else {
+        const { error } = await signUpDoctor(formData.email, formData.password, formData.fullName);
+        if (error) {
+          toast({
+            title: "Registration Failed",
+            description: error,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        toast({
+          title: "Account Created! 🎉",
+          description: "Welcome to ParkiSense.",
+        });
+      }
+      navigate('/doctor/dashboard');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const isFormValid = isLogin 
+    ? formData.email && formData.password
+    : formData.email && formData.password && formData.fullName && formData.confirmPassword;
 
   return (
     <div className="min-h-screen bg-background px-6 py-8">
@@ -104,6 +158,11 @@ const DoctorAuth = () => {
                 value={formData.password}
                 onChange={handleInputChange}
               />
+              {!isLogin && (
+                <p className="text-sm text-muted-foreground">
+                  Password must be at least 6 characters
+                </p>
+              )}
             </div>
 
             {!isLogin && (
@@ -127,15 +186,30 @@ const DoctorAuth = () => {
               size="lg"
               className="w-full mt-6"
               onClick={handleSubmit}
-              disabled={!formData.email || !formData.password}
+              disabled={!isFormValid || isLoading}
             >
-              {isLogin ? 'Login' : 'Create Account'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  {isLogin ? 'Logging in...' : 'Creating account...'}
+                </>
+              ) : (
+                isLogin ? 'Login' : 'Create Account'
+              )}
             </Button>
 
             <div className="text-center pt-4">
               <button
                 className="text-primary font-medium text-lg"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setFormData({
+                    fullName: '',
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                  });
+                }}
               >
                 {isLogin ? "New doctor? Register here" : "Already registered? Login"}
               </button>

@@ -5,44 +5,85 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import Logo from '@/components/Logo';
-import { ArrowLeft, Phone, User, Calendar, UserCircle } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft, Phone, User, Calendar, UserCircle, Mail, Lock, Loader2 } from 'lucide-react';
+import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const PatientAuth = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { signUpPatient, loginPatient, isLoading: authLoading } = useFirebaseAuth();
+  const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
+    password: '',
     phone: '',
     age: '',
     gender: '',
   });
-  const [otp, setOtp] = useState('');
-  const [showOtp, setShowOtp] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSendOtp = () => {
-    setShowOtp(true);
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    
+    try {
+      if (isLogin) {
+        const { error } = await loginPatient(formData.email, formData.password);
+        if (error) {
+          toast({
+            title: "Login Failed",
+            description: error,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        toast({
+          title: "Welcome back! 👋",
+          description: "Successfully logged in.",
+        });
+      } else {
+        const { error } = await signUpPatient(formData.email, formData.password, {
+          name: formData.fullName,
+          phone: formData.phone,
+          age: parseInt(formData.age) || undefined,
+          gender: formData.gender,
+          email: formData.email,
+        });
+        if (error) {
+          toast({
+            title: "Sign Up Failed",
+            description: error,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        toast({
+          title: "Account Created! 🎉",
+          description: "Welcome to ParkiSense.",
+        });
+      }
+      navigate('/patient/dashboard');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleVerifyOtp = () => {
-    if (otp !== '123456') {
-      return; // Invalid OTP
-    }
-    login({
-      id: '1',
-      name: isLogin ? 'Patient User' : formData.fullName,
-      role: 'patient',
-      phone: formData.phone,
-      age: parseInt(formData.age) || undefined,
-      gender: formData.gender,
-    });
-    navigate('/patient/dashboard');
-  };
+  const isFormValid = isLogin 
+    ? formData.email && formData.password
+    : formData.email && formData.password && formData.fullName;
 
   return (
     <div className="min-h-screen bg-background px-6 py-8">
@@ -62,13 +103,13 @@ const PatientAuth = () => {
             </CardTitle>
             <CardDescription className="text-base">
               {isLogin 
-                ? 'Enter your phone number to continue' 
+                ? 'Enter your credentials to continue' 
                 : 'We need a few details to get started'}
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-5 pt-4">
-            {!isLogin && !showOtp && (
+            {!isLogin && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="fullName" className="text-base font-medium flex items-center gap-2">
@@ -119,55 +160,73 @@ const PatientAuth = () => {
                     </select>
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-base font-medium flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    Phone Number (Optional)
+                  </Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-base font-medium flex items-center gap-2">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                Phone Number
+              <Label htmlFor="email" className="text-base font-medium flex items-center gap-2">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                Email Address
               </Label>
               <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="Enter your phone number"
-                value={formData.phone}
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Enter your email"
+                value={formData.email}
                 onChange={handleInputChange}
-                disabled={showOtp}
               />
             </div>
 
-            {showOtp && (
-              <div className="space-y-2 animate-slide-up">
-                <Label htmlFor="otp" className="text-base font-medium">
-                  Enter OTP sent to your phone
-                </Label>
-                <Input
-                  id="otp"
-                  type="text"
-                  placeholder="Enter 6-digit OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  maxLength={6}
-                  className="text-center text-2xl tracking-[0.5em]"
-                />
-                <div className="bg-primary-light border border-primary/20 rounded-xl p-3 text-center">
-                  <p className="text-primary font-medium">Demo OTP: 123456</p>
-                </div>
-                <p className="text-sm text-muted-foreground text-center mt-2">
-                  Didn't receive? <button className="text-primary font-medium">Resend OTP</button>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-base font-medium flex items-center gap-2">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+                Password
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleInputChange}
+              />
+              {!isLogin && (
+                <p className="text-sm text-muted-foreground">
+                  Password must be at least 6 characters
                 </p>
-              </div>
-            )}
+              )}
+            </div>
 
             <Button
               size="lg"
               className="w-full mt-6"
-              onClick={showOtp ? handleVerifyOtp : handleSendOtp}
-              disabled={!formData.phone || (!isLogin && !showOtp && !formData.fullName)}
+              onClick={handleSubmit}
+              disabled={!isFormValid || isLoading}
             >
-              {showOtp ? 'Verify & Continue' : 'Send OTP'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  {isLogin ? 'Logging in...' : 'Creating account...'}
+                </>
+              ) : (
+                isLogin ? 'Login' : 'Create Account'
+              )}
             </Button>
 
             <div className="text-center pt-4">
@@ -175,7 +234,14 @@ const PatientAuth = () => {
                 className="text-primary font-medium text-lg"
                 onClick={() => {
                   setIsLogin(!isLogin);
-                  setShowOtp(false);
+                  setFormData({
+                    fullName: '',
+                    email: '',
+                    password: '',
+                    phone: '',
+                    age: '',
+                    gender: '',
+                  });
                 }}
               >
                 {isLogin ? "New here? Create an account" : "Already have an account? Login"}
