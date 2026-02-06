@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
-import { useAuth } from '@/contexts/AuthContext';
+import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { useMedication } from '@/contexts/MedicationContext';
 import WakeUpButton from '@/components/medication/WakeUpButton';
 import MedicationSchedule from '@/components/medication/MedicationSchedule';
-import { Hand, Mic, PenTool, LogOut, ChevronRight, Award, Clock, Pill } from 'lucide-react';
+import { Hand, Mic, PenTool, LogOut, ChevronRight, Clock, Pill, BarChart3, Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 const tests = [
   {
@@ -42,12 +43,19 @@ const tests = [
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useFirebaseAuth();
   const { isAwake, scheduledDoses } = useMedication();
   const takenCount = scheduledDoses.filter(d => d.taken).length;
   const totalCount = scheduledDoses.length;
-  const handleLogout = () => {
-    logout();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate('/patient/auth');
+    }
+  }, [user, isLoading, navigate]);
+
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -57,6 +65,14 @@ const PatientDashboard = () => {
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,6 +97,21 @@ const PatientDashboard = () => {
             Ready for your health check today?
           </p>
         </div>
+
+        {/* Progress Dashboard Link */}
+        <button 
+          onClick={() => navigate('/patient/progress')}
+          className="w-full mt-6 bg-gradient-to-r from-primary/10 to-success/10 border-2 border-primary/20 rounded-2xl p-4 flex items-center gap-4 animate-fade-in hover:border-primary/40 transition-all"
+        >
+          <div className="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center">
+            <BarChart3 className="w-6 h-6 text-primary" />
+          </div>
+          <div className="flex-1 text-left">
+            <h3 className="font-semibold text-foreground">View My Progress</h3>
+            <p className="text-sm text-muted-foreground">Track tests, medications & trends</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-primary" />
+        </button>
 
         {/* Wake Up Button */}
         <div className="mt-8 animate-slide-up">
