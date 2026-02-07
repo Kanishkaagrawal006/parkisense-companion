@@ -5,7 +5,12 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  signInWithPhoneNumber,
+  PhoneAuthProvider,
+  signInWithCredential,
+  ConfirmationResult,
+  RecaptchaVerifier
 } from 'firebase/auth';
 import { 
   doc, 
@@ -18,7 +23,7 @@ import {
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, setupRecaptcha } from '@/lib/firebase';
 
 type UserRole = 'patient' | 'doctor' | null;
 
@@ -38,9 +43,10 @@ interface FirebaseAuthContextType {
   firebaseUser: FirebaseUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signUpPatient: (email: string, password: string, profile: Omit<UserProfile, 'id' | 'role' | 'createdAt'>) => Promise<{ error?: string }>;
+  sendOTP: (phoneNumber: string, recaptchaContainerId: string) => Promise<{ error?: string; confirmationResult?: ConfirmationResult }>;
+  verifyOTPAndSignUp: (otp: string, confirmationResult: ConfirmationResult, profile: Omit<UserProfile, 'id' | 'role' | 'createdAt'>) => Promise<{ error?: string }>;
+  verifyOTPAndLogin: (otp: string, confirmationResult: ConfirmationResult) => Promise<{ error?: string }>;
   signUpDoctor: (email: string, password: string, name: string) => Promise<{ error?: string }>;
-  loginPatient: (email: string, password: string) => Promise<{ error?: string }>;
   loginDoctor: (email: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
@@ -86,21 +92,47 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  const signUpPatient = async (
-    email: string, 
-    password: string, 
+  const sendOTP = async (
+    phoneNumber: string, 
+    recaptchaContainerId: string
+  ): Promise<{ error?: string; confirmationResult?: ConfirmationResult }> => {
+    try {
+      const recaptchaVerifier = setupRecaptcha(recaptchaContainerId);
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+      return { confirmationResult };
+    } catch (error: any) {
+      console.error('Send OTP error:', error);
+      if (error.code === 'auth/invalid-phone-number') {
+        return { error: 'Invalid phone number format. Please use format: +1234567890' };
+      }
+      if (error.code === 'auth/too-many-requests') {
+        return { error: 'Too many requests. Please try again later.' };
+      }
+      return { error: error.message || 'Failed to send OTP' };
+    }
+  };
+
+  const verifyOTPAndSignUp = async (
+    otp: string, 
+    confirmationResult: ConfirmationResult,
     profile: Omit<UserProfile, 'id' | 'role' | 'createdAt'>
   ): Promise<{ error?: string }> => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await confirmationResult.confirm(otp);
       const uid = userCredential.user.uid;
+
+      // Check if user already exists
+      const existingUser = await getDoc(doc(db, 'users', uid));
+      if (existingUser.exists()) {
+        return { error: 'This phone number is already registered. Please login instead.' };
+      }
 
       // Create user profile in Firestore
       await setDoc(doc(db, 'users', uid), {
         name: profile.name,
         role: 'patient',
-        phone: profile.phone || '',
-        email: email,
+        phone: profile.phone || userCredential.user.phoneNumber || '',
+        email: profile.email || '',
         age: profile.age || null,
         gender: profile.gender || '',
         createdAt: serverTimestamp(),
@@ -108,14 +140,46 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return {};
     } catch (error: any) {
-      console.error('Sign up error:', error);
-      if (error.code === 'auth/email-already-in-use') {
-        return { error: 'This email is already registered. Please login instead.' };
+      console.error('Verify OTP error:', error);
+      if (error.code === 'auth/invalid-verification-code') {
+        return { error: 'Invalid OTP. Please try again.' };
       }
-      if (error.code === 'auth/weak-password') {
-        return { error: 'Password should be at least 6 characters.' };
+      if (error.code === 'auth/code-expired') {
+        return { error: 'OTP has expired. Please request a new one.' };
       }
-      return { error: error.message || 'Failed to create account' };
+      return { error: error.message || 'Failed to verify OTP' };
+    }
+  };
+
+  const verifyOTPAndLogin = async (
+    otp: string, 
+    confirmationResult: ConfirmationResult
+  ): Promise<{ error?: string }> => {
+    try {
+      const userCredential = await confirmationResult.confirm(otp);
+      
+      // Verify user exists and is a patient
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      if (!userDoc.exists()) {
+        await signOut(auth);
+        return { error: 'Account not found. Please sign up first.' };
+      }
+      
+      if (userDoc.data().role !== 'patient') {
+        await signOut(auth);
+        return { error: 'This account is not registered as a patient.' };
+      }
+
+      return {};
+    } catch (error: any) {
+      console.error('Verify OTP login error:', error);
+      if (error.code === 'auth/invalid-verification-code') {
+        return { error: 'Invalid OTP. Please try again.' };
+      }
+      if (error.code === 'auth/code-expired') {
+        return { error: 'OTP has expired. Please request a new one.' };
+      }
+      return { error: error.message || 'Failed to verify OTP' };
     }
   };
 
@@ -146,32 +210,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: 'Password should be at least 6 characters.' };
       }
       return { error: error.message || 'Failed to create account' };
-    }
-  };
-
-  const loginPatient = async (email: string, password: string): Promise<{ error?: string }> => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Verify user is a patient
-      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
-      if (!userDoc.exists()) {
-        await signOut(auth);
-        return { error: 'Account not found. Please sign up first.' };
-      }
-      
-      if (userDoc.data().role !== 'patient') {
-        await signOut(auth);
-        return { error: 'This account is not registered as a patient.' };
-      }
-
-      return {};
-    } catch (error: any) {
-      console.error('Login error:', error);
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        return { error: 'Invalid email or password.' };
-      }
-      return { error: error.message || 'Failed to login' };
     }
   };
 
@@ -222,9 +260,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         firebaseUser,
         isAuthenticated: !!user, 
         isLoading,
-        signUpPatient,
+        sendOTP,
+        verifyOTPAndSignUp,
+        verifyOTPAndLogin,
         signUpDoctor,
-        loginPatient,
         loginDoctor,
         logout,
         resetPassword
