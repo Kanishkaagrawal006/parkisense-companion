@@ -34,7 +34,8 @@ export interface UserProfile {
   phone?: string;
   email?: string;
   age?: number;
-  gender?: string;
+  weight?: number;
+  height?: number;
   createdAt?: Date;
 }
 
@@ -76,7 +77,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             phone: data.phone,
             email: data.email,
             age: data.age,
-            gender: data.gender,
+            weight: data.weight,
+            height: data.height,
             createdAt: data.createdAt?.toDate(),
           });
         } else {
@@ -134,7 +136,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         phone: profile.phone || userCredential.user.phoneNumber || '',
         email: profile.email || '',
         age: profile.age || null,
-        gender: profile.gender || '',
+        weight: profile.weight || null,
+        height: profile.height || null,
         createdAt: serverTimestamp(),
       });
 

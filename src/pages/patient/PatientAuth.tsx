@@ -1,11 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import Logo from '@/components/Logo';
-import { ArrowLeft, Phone, User, Calendar, UserCircle, Mail, Loader2 } from 'lucide-react';
+import { ArrowLeft, Phone, User, Calendar, Ruler, Weight, Loader2 } from 'lucide-react';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
@@ -24,10 +24,10 @@ const PatientAuth = () => {
   const [otp, setOtp] = useState('');
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
     phone: '',
     age: '',
-    gender: '',
+    weight: '',
+    height: '',
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -116,13 +116,23 @@ const PatientAuth = () => {
   const handleCompleteSignup = async () => {
     if (!confirmationResult) return;
 
+    // Validate inputs
+    if (!formData.fullName.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter your full name",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     const { error } = await verifyOTPAndSignUp(otp, confirmationResult, {
-      name: formData.fullName,
+      name: formData.fullName.trim(),
       phone: formatPhoneNumber(formData.phone),
       age: parseInt(formData.age) || undefined,
-      gender: formData.gender,
-      email: formData.email,
+      weight: parseFloat(formData.weight) || undefined,
+      height: parseFloat(formData.height) || undefined,
     });
 
     if (error) {
@@ -149,10 +159,10 @@ const PatientAuth = () => {
     setConfirmationResult(null);
     setFormData({
       fullName: '',
-      email: '',
       phone: '',
       age: '',
-      gender: '',
+      weight: '',
+      height: '',
     });
   };
 
@@ -272,58 +282,63 @@ const PatientAuth = () => {
             placeholder="Enter your full name"
             value={formData.fullName}
             onChange={handleInputChange}
+            maxLength={100}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="age" className="text-base font-medium flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            Age (years)
+          </Label>
+          <Input
+            id="age"
+            name="age"
+            type="number"
+            placeholder="Enter your age"
+            value={formData.age}
+            onChange={handleInputChange}
+            min={1}
+            max={150}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="age" className="text-base font-medium flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              Age
+            <Label htmlFor="weight" className="text-base font-medium flex items-center gap-2">
+              <Weight className="w-4 h-4 text-muted-foreground" />
+              Weight (kg)
             </Label>
             <Input
-              id="age"
-              name="age"
+              id="weight"
+              name="weight"
               type="number"
-              placeholder="Age"
-              value={formData.age}
+              placeholder="e.g., 70"
+              value={formData.weight}
               onChange={handleInputChange}
+              min={1}
+              max={500}
+              step="0.1"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="gender" className="text-base font-medium flex items-center gap-2">
-              <UserCircle className="w-4 h-4 text-muted-foreground" />
-              Gender
+            <Label htmlFor="height" className="text-base font-medium flex items-center gap-2">
+              <Ruler className="w-4 h-4 text-muted-foreground" />
+              Height (cm)
             </Label>
-            <select
-              id="gender"
-              name="gender"
-              className="flex h-14 w-full rounded-xl border-2 border-input bg-background px-4 py-3 text-lg focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all"
-              value={formData.gender}
+            <Input
+              id="height"
+              name="height"
+              type="number"
+              placeholder="e.g., 170"
+              value={formData.height}
               onChange={handleInputChange}
-            >
-              <option value="">Select</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
+              min={30}
+              max={300}
+              step="0.1"
+            />
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-base font-medium flex items-center gap-2">
-            <Mail className="w-4 h-4 text-muted-foreground" />
-            Email (Optional)
-          </Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="Enter your email"
-            value={formData.email}
-            onChange={handleInputChange}
-          />
         </div>
       </div>
 
@@ -331,7 +346,7 @@ const PatientAuth = () => {
         size="lg"
         className="w-full mt-6"
         onClick={handleCompleteSignup}
-        disabled={!formData.fullName || isLoading}
+        disabled={!formData.fullName.trim() || isLoading}
       >
         {isLoading ? (
           <>
