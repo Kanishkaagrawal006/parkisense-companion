@@ -5,12 +5,12 @@ import { getFirestore } from 'firebase/firestore';
 // Firebase configuration
 // Replace these values with your Firebase project config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAcwvTtVY1GFSCLQIG7WpQwactDFGX5n6M",
+  authDomain: "parkisense-companion-5e7d4.firebaseapp.com",
+  projectId: "parkisense-companion-5e7d4",
+  storageBucket: "parkisense-companion-5e7d4.firebasestorage.app",
+  messagingSenderId: "576763392542",
+  appId: "1:576763392542:web:47c1851af2301674d8740f"
 };
 
 // Initialize Firebase
