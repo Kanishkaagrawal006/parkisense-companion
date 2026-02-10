@@ -98,20 +98,27 @@ const PatientDashboard = () => {
           </p>
         </div>
 
-        {/* Progress Dashboard Link */}
-        <button 
-          onClick={() => navigate('/patient/progress')}
-          className="w-full mt-6 bg-gradient-to-r from-primary/10 to-success/10 border-2 border-primary/20 rounded-2xl p-4 flex items-center gap-4 animate-fade-in hover:border-primary/40 transition-all"
-        >
-          <div className="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center">
-            <BarChart3 className="w-6 h-6 text-primary" />
-          </div>
-          <div className="flex-1 text-left">
-            <h3 className="font-semibold text-foreground">View My Progress</h3>
-            <p className="text-sm text-muted-foreground">Track tests, medications & trends</p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-primary" />
-        </button>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-4 mt-6">
+          <button 
+            onClick={() => navigate('/patient/progress')}
+            className="bg-gradient-to-r from-primary/10 to-success/10 border-2 border-primary/20 rounded-2xl p-4 flex flex-col items-center gap-2 animate-fade-in hover:border-primary/40 transition-all"
+          >
+            <div className="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-primary" />
+            </div>
+            <h3 className="font-semibold text-foreground text-sm">My Progress</h3>
+          </button>
+          <button 
+            onClick={() => navigate('/patient/medicines')}
+            className="bg-gradient-to-r from-warning/10 to-accent/10 border-2 border-warning/20 rounded-2xl p-4 flex flex-col items-center gap-2 animate-fade-in hover:border-warning/40 transition-all"
+          >
+            <div className="w-12 h-12 rounded-xl bg-warning-light flex items-center justify-center">
+              <Pill className="w-6 h-6 text-warning" />
+            </div>
+            <h3 className="font-semibold text-foreground text-sm">My Medicines</h3>
+          </button>
+        </div>
 
         {/* Wake Up Button */}
         <div className="mt-8 animate-slide-up">

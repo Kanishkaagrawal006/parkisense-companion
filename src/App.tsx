@@ -11,6 +11,7 @@ import Welcome from "./pages/Welcome";
 import PatientAuth from "./pages/patient/PatientAuth";
 import PatientDashboard from "./pages/patient/PatientDashboard";
 import PatientProgress from "./pages/patient/PatientProgress";
+import MedicineManagement from "./pages/patient/MedicineManagement";
 import TappingTest from "./pages/patient/tests/TappingTest";
 import SpeechTest from "./pages/patient/tests/SpeechTest";
 import SpiralTest from "./pages/patient/tests/SpiralTest";
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/patient/auth" element={<PatientAuth />} />
               <Route path="/patient/dashboard" element={<PatientDashboard />} />
               <Route path="/patient/progress" element={<PatientProgress />} />
+              <Route path="/patient/medicines" element={<MedicineManagement />} />
               <Route path="/patient/test/tapping" element={<TappingTest />} />
               <Route path="/patient/test/speech" element={<SpeechTest />} />
               <Route path="/patient/test/spiral" element={<SpiralTest />} />
