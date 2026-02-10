@@ -25,6 +25,8 @@ import {
   Minus,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { DEMO_PATIENT, getTrendLabel } from '@/lib/demoData';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
@@ -286,6 +288,72 @@ const DoctorDashboard = () => {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Demo Patient Monitoring Section */}
+        <div className="mt-10">
+          <h2 className="text-xl font-bold text-foreground mb-4">📊 Demo Patient Monitoring — {DEMO_PATIENT.name}</h2>
+          <p className="text-sm text-muted-foreground mb-6">Static demo data showing weekly test trends over 6 weeks. This section will be replaced with live Firebase data in production.</p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Combined Line Chart */}
+            <div className="bg-card rounded-3xl p-6 shadow-card">
+              <h3 className="font-semibold text-foreground mb-4">All Tests — Weekly Trend</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={DEMO_PATIENT.weeklyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="weekLabel" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" label={{ value: 'Score', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: 'hsl(var(--muted-foreground))' } }} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }} />
+                    <Legend />
+                    <Line type="monotone" dataKey="tapping_score" name="Tapping" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="speech_score" name="Speech" stroke="hsl(var(--success))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="spiral_score" name="Spiral" stroke="hsl(var(--warning))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Bar Chart comparison */}
+            <div className="bg-card rounded-3xl p-6 shadow-card">
+              <h3 className="font-semibold text-foreground mb-4">Score Comparison per Week</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={DEMO_PATIENT.weeklyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="weekLabel" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }} />
+                    <Legend />
+                    <Bar dataKey="tapping_score" name="Tapping" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="speech_score" name="Speech" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="spiral_score" name="Spiral" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Trend Summary */}
+          <div className="grid grid-cols-3 gap-4 mt-6">
+            {([
+              { name: 'Tapping', scores: DEMO_PATIENT.weeklyData.map(d => d.tapping_score), icon: Hand, color: 'text-primary' },
+              { name: 'Speech', scores: DEMO_PATIENT.weeklyData.map(d => d.speech_score), icon: Mic, color: 'text-success' },
+              { name: 'Spiral', scores: DEMO_PATIENT.weeklyData.map(d => d.spiral_score), icon: PenTool, color: 'text-warning' },
+            ]).map(t => {
+              const trend = getTrendLabel(t.scores);
+              return (
+                <div key={t.name} className="bg-card rounded-2xl p-4 shadow-card text-center">
+                  <t.icon className={`w-6 h-6 mx-auto mb-2 ${t.color}`} />
+                  <p className="text-sm font-medium text-foreground">{t.name}</p>
+                  <p className={`text-xs font-semibold mt-1 ${trend === 'Improving' ? 'text-success' : trend === 'Deteriorating' ? 'text-destructive' : 'text-muted-foreground'}`}>
+                    {trend}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </main>
