@@ -9,6 +9,7 @@ import {
   orderBy, 
   addDoc,
   updateDoc,
+  deleteDoc,
   serverTimestamp,
   Timestamp,
   limit
