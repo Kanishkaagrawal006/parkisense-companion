@@ -17,6 +17,7 @@ import SpeechTest from "./pages/patient/tests/SpeechTest";
 import SpiralTest from "./pages/patient/tests/SpiralTest";
 import DoctorAuth from "./pages/doctor/DoctorAuth";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import DemoProgress from "./pages/DemoProgress";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,9 @@ const App = () => (
               {/* Doctor Routes */}
               <Route path="/doctor/auth" element={<DoctorAuth />} />
               <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+              
+              {/* Demo */}
+              <Route path="/demo/progress" element={<DemoProgress />} />
               
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
