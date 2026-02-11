@@ -1,13 +1,46 @@
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, BedDouble } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMedication } from '@/contexts/MedicationContext';
-import { format } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
+import { useState, useEffect } from 'react';
 
 const WakeUpButton = () => {
   const { wakeUpTime, setWakeUpTime, isAwake, resetDay } = useMedication();
+  const [sleepDuration, setSleepDuration] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (wakeUpTime) {
+      // Calculate sleep from stored bedtime or estimate 7-8 hrs
+      const stored = localStorage.getItem('parkisense_bedtime');
+      if (stored) {
+        const bedtime = new Date(stored);
+        const mins = differenceInMinutes(wakeUpTime, bedtime);
+        const hrs = Math.floor(mins / 60);
+        const m = mins % 60;
+        setSleepDuration(`${hrs}h ${m}m`);
+        // Save sleep record
+        const records = JSON.parse(localStorage.getItem('parkisense_sleep_records') || '[]');
+        const today = format(wakeUpTime, 'yyyy-MM-dd');
+        if (!records.find((r: any) => r.date === today)) {
+          records.push({
+            date: today,
+            sleepHours: Math.round(mins / 6) / 10,
+            bedTime: format(bedtime, 'HH:mm'),
+            wakeTime: format(wakeUpTime, 'HH:mm'),
+          });
+          localStorage.setItem('parkisense_sleep_records', JSON.stringify(records));
+        }
+      }
+    }
+  }, [wakeUpTime]);
 
   const handleWakeUp = () => {
     setWakeUpTime(new Date());
+  };
+
+  const handleSleep = () => {
+    localStorage.setItem('parkisense_bedtime', new Date().toISOString());
+    resetDay();
   };
 
   if (isAwake && wakeUpTime) {
@@ -25,16 +58,21 @@ const WakeUpButton = () => {
                 {format(wakeUpTime, 'h:mm a')}
               </span>
             </p>
+            {sleepDuration && (
+              <p className="text-sm text-muted-foreground mt-1">
+                🛌 Slept for <span className="font-semibold text-foreground">{sleepDuration}</span>
+              </p>
+            )}
           </div>
         </div>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          onClick={resetDay}
-          className="mt-4 text-muted-foreground hover:text-destructive"
+          onClick={handleSleep}
+          className="mt-4 text-muted-foreground hover:text-primary border-primary/20"
         >
-          <Moon className="w-4 h-4 mr-2" />
-          Reset (new day)
+          <BedDouble className="w-4 h-4 mr-2" />
+          Going to Sleep
         </Button>
       </div>
     );

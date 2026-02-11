@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { getAllPatients, getPatientTestResults, getPatientMedicationLogs, getMedicationAdherence, PatientData, TestResult } from '@/lib/firestore';
+import { DEMO_PATIENT, getTrendLabel, avg, NMS_CATEGORIES } from '@/lib/demoData';
 import { downloadPatientReport } from '@/lib/generatePdf';
 import { 
   LogOut, 
@@ -25,8 +26,8 @@ import {
   Minus,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { DEMO_PATIENT, getTrendLabel } from '@/lib/demoData';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { BedDouble, ClipboardCheck } from 'lucide-react';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
@@ -294,10 +295,10 @@ const DoctorDashboard = () => {
         {/* Demo Patient Monitoring Section */}
         <div className="mt-10">
           <h2 className="text-xl font-bold text-foreground mb-4">📊 Demo Patient Monitoring — {DEMO_PATIENT.name}</h2>
-          <p className="text-sm text-muted-foreground mb-6">Static demo data showing weekly test trends over 6 weeks. This section will be replaced with live Firebase data in production.</p>
+          <p className="text-sm text-muted-foreground mb-6">Static demo data showing weekly test trends, sleep records, and non-motor symptom scores.</p>
 
+          {/* Test Trend Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Combined Line Chart */}
             <div className="bg-card rounded-3xl p-6 shadow-card">
               <h3 className="font-semibold text-foreground mb-4">All Tests — Weekly Trend</h3>
               <div className="h-64">
@@ -305,7 +306,7 @@ const DoctorDashboard = () => {
                   <LineChart data={DEMO_PATIENT.weeklyData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="weekLabel" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" label={{ value: 'Score', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: 'hsl(var(--muted-foreground))' } }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }} />
                     <Legend />
                     <Line type="monotone" dataKey="tapping_score" name="Tapping" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
@@ -316,41 +317,82 @@ const DoctorDashboard = () => {
               </div>
             </div>
 
-            {/* Bar Chart comparison */}
+            {/* Sleep Chart */}
             <div className="bg-card rounded-3xl p-6 shadow-card">
-              <h3 className="font-semibold text-foreground mb-4">Score Comparison per Week</h3>
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <BedDouble className="w-5 h-5 text-primary" /> Sleep Duration — Daily
+              </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={DEMO_PATIENT.weeklyData}>
+                  <BarChart data={DEMO_PATIENT.sleepRecords}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="weekLabel" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" tickFormatter={d => d.slice(5)} />
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" label={{ value: 'Hours', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: 'hsl(var(--muted-foreground))' } }} />
                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }} />
-                    <Legend />
-                    <Bar dataKey="tapping_score" name="Tapping" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="speech_score" name="Speech" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="spiral_score" name="Spiral" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="sleepHours" name="Sleep (hrs)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
           </div>
 
-          {/* Trend Summary */}
-          <div className="grid grid-cols-3 gap-4 mt-6">
+          {/* NMS Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div className="bg-card rounded-3xl p-6 shadow-card">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-destructive" /> NMS Total — Weekly Trend
+              </h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={DEMO_PATIENT.nmsRecords}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="weekLabel" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis domain={[0, 24]} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }} />
+                    <Line type="monotone" dataKey="total" name="NMS Total" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-3xl p-6 shadow-card">
+              <h3 className="font-semibold text-foreground mb-4">NMS Breakdown — Stacked</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={DEMO_PATIENT.nmsRecords}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="weekLabel" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis domain={[0, 24]} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }} />
+                    <Legend />
+                    {NMS_CATEGORIES.map(c => (
+                      <Bar key={c.key} dataKey={c.key} name={c.label.split('(')[0].trim()} fill={c.color} stackId="nms" />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-4 gap-4 mt-6">
             {([
               { name: 'Tapping', scores: DEMO_PATIENT.weeklyData.map(d => d.tapping_score), icon: Hand, color: 'text-primary' },
               { name: 'Speech', scores: DEMO_PATIENT.weeklyData.map(d => d.speech_score), icon: Mic, color: 'text-success' },
               { name: 'Spiral', scores: DEMO_PATIENT.weeklyData.map(d => d.spiral_score), icon: PenTool, color: 'text-warning' },
+              { name: 'Avg Sleep', scores: [avg(DEMO_PATIENT.sleepRecords.map(d => d.sleepHours))], icon: BedDouble, color: 'text-primary' },
             ]).map(t => {
-              const trend = getTrendLabel(t.scores);
+              const trend = t.scores.length > 1 ? getTrendLabel(t.scores) : 'Stable';
               return (
                 <div key={t.name} className="bg-card rounded-2xl p-4 shadow-card text-center">
                   <t.icon className={`w-6 h-6 mx-auto mb-2 ${t.color}`} />
                   <p className="text-sm font-medium text-foreground">{t.name}</p>
-                  <p className={`text-xs font-semibold mt-1 ${trend === 'Improving' ? 'text-success' : trend === 'Deteriorating' ? 'text-destructive' : 'text-muted-foreground'}`}>
-                    {trend}
-                  </p>
+                  <p className="text-lg font-bold text-foreground">{t.scores.length === 1 ? `${t.scores[0]}h` : t.scores[t.scores.length - 1]}</p>
+                  {t.scores.length > 1 && (
+                    <p className={`text-xs font-semibold mt-1 ${trend === 'Improving' ? 'text-success' : trend === 'Deteriorating' ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {trend}
+                    </p>
+                  )}
                 </div>
               );
             })}

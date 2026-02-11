@@ -5,7 +5,7 @@ import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { useMedication } from '@/contexts/MedicationContext';
 import WakeUpButton from '@/components/medication/WakeUpButton';
 import MedicationSchedule from '@/components/medication/MedicationSchedule';
-import { Hand, Mic, PenTool, LogOut, ChevronRight, Clock, Pill, BarChart3, Loader2, Eye } from 'lucide-react';
+import { Hand, Mic, PenTool, LogOut, ChevronRight, Clock, Pill, BarChart3, Loader2, Eye, ClipboardCheck, BedDouble } from 'lucide-react';
 import { useEffect } from 'react';
 
 const tests = [
@@ -99,7 +99,7 @@ const PatientDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-3 mt-6">
+        <div className="grid grid-cols-2 gap-3 mt-6">
           <button 
             onClick={() => navigate('/patient/progress')}
             className="bg-gradient-to-r from-primary/10 to-success/10 border-2 border-primary/20 rounded-2xl p-4 flex flex-col items-center gap-2 animate-fade-in hover:border-primary/40 transition-all"
@@ -117,6 +117,15 @@ const PatientDashboard = () => {
               <Pill className="w-6 h-6 text-warning" />
             </div>
             <h3 className="font-semibold text-foreground text-xs">My Medicines</h3>
+          </button>
+          <button 
+            onClick={() => navigate('/patient/nms-questionnaire')}
+            className="bg-gradient-to-r from-destructive/10 to-warning/10 border-2 border-destructive/20 rounded-2xl p-4 flex flex-col items-center gap-2 animate-fade-in hover:border-destructive/40 transition-all"
+          >
+            <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+              <ClipboardCheck className="w-6 h-6 text-destructive" />
+            </div>
+            <h3 className="font-semibold text-foreground text-xs">NMS Survey</h3>
           </button>
           <button 
             onClick={() => navigate('/demo/progress')}
