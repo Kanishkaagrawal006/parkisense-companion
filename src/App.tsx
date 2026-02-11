@@ -15,6 +15,7 @@ import MedicineManagement from "./pages/patient/MedicineManagement";
 import TappingTest from "./pages/patient/tests/TappingTest";
 import SpeechTest from "./pages/patient/tests/SpeechTest";
 import SpiralTest from "./pages/patient/tests/SpiralTest";
+import NMSQuestionnaire from "./pages/patient/NMSQuestionnaire";
 import DoctorAuth from "./pages/doctor/DoctorAuth";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 import DemoProgress from "./pages/DemoProgress";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/patient/test/tapping" element={<TappingTest />} />
               <Route path="/patient/test/speech" element={<SpeechTest />} />
               <Route path="/patient/test/spiral" element={<SpiralTest />} />
+              <Route path="/patient/nms-questionnaire" element={<NMSQuestionnaire />} />
               
               {/* Doctor Routes */}
               <Route path="/doctor/auth" element={<DoctorAuth />} />
